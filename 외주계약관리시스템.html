@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>외주 계약 및 정산 관리 시스템</title>
+<!-- Supabase JS SDK (선택적 연결용) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --orange: #FF6B1A;
+    --orange-light: #FFE8D9;
+    --orange-dark: #E55B0E;
+    --blue-pastel: #E3F2FD;
+    --blue-pastel-strong: #B3E5FC;
+    --blue-line: #90CAF9;
+    --navy: #0D47A1;
+    --navy-soft: #1E3A8A;
+    --text: #1F2937;
+    --text-light: #6B7280;
+    --border: #E5E7EB;
+    --bg: #FFFFFF;
+    --bg-soft: #F9FAFB;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --info: #3B82F6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+    background: var(--bg-soft);
+    color: var(--text);
+    line-height: 1.5;
+    font-size: 14px;
+  }
+  /* Header */
+  header {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo-mark {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 16px;
+  }
+  .logo h1 { font-size: 17px; font-weight: 700; }
+  .logo .sub { font-size: 11px; color: var(--text-light); }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { background: var(--bg-soft); }
+  .btn-primary { background: var(--orange); color: #fff; border-color: var(--orange); }
+  .btn-primary:hover { background: var(--orange-dark); }
+  .btn-ghost { border: none; background: transparent; }
+  .btn-ghost:hover { background: var(--bg-soft); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-danger { color: var(--danger); border-color: #FCA5A5; }
+  .btn-danger:hover { background: #FEF2F2; }
+
+  /* Main layout */
+  main {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 24px 32px;
+  }
+
+  /* ========== 탭 ========== */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid var(--blue-line);
+    margin-bottom: 0;
+  }
+  .tab {
+    padding: 14px 24px;
+    background: transparent;
+    border: 2px solid transparent;
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-light);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: -2px;
+    transition: all 0.15s;
+  }
+  .tab:hover { color: var(--orange); background: var(--orange-light); }
+  .tab.active {
+    background: #fff;
+    color: var(--orange);
+    border-color: var(--blue-line);
+    border-bottom: 2px solid #fff;
+  }
+  .tab .count {
+    background: var(--blue-pastel);
+    color: var(--navy);
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .tab.active .count { background: var(--orange); color: #fff; }
+
+  /* Toolbar */
+  .toolbar {
+    background: #fff;
+    border: 1px solid var(--blue-line);
+    border-top: none;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .toolbar input[type="text"], .toolbar select {
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-size: 13px;
+    background: #fff;
+    min-width: 140px;
+  }
+  .toolbar input[type="text"]:focus, .toolbar select:focus {
+    outline: none;
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px var(--orange-light);
+  }
+  .toolbar .spacer { flex: 1; }
+
+  /* 뷰 토글 */
+  .view-toggle {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    overflow: hidden;
+    background: #fff;
+  }
+  .view-toggle button {
+    border: none; background: transparent;
+    padding: 6px 12px; cursor: pointer;
+    font-size: 12px; color: var(--text-light);
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .view-toggle button:hover { background: var(--bg-soft); }
+  .view-toggle button.active { background: var(--orange); color: #fff; font-weight: 600; }
+
+  /* Table */
+  .table-wrap {
+    background: #fff;
+    border: 1px solid var(--blue-line);
+    border-top: none;
+    overflow: auto;
+    max-height: calc(100vh - 280px);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    min-width: 2200px;
+  }
+  thead {
+    background: var(--bg-soft);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  thead th {
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-light);
+    border-bottom: 2px solid var(--blue-line);
+    white-space: nowrap;
+  }
+  thead tr.group-row th {
+    background: var(--blue-pastel);
+    color: var(--navy);
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 11px 8px;
+    border-top: 1px solid var(--blue-line);
+    border-bottom: 1px solid var(--blue-line);
+  }
+  thead tr.detail-row th { background: #fff; }
+  thead tr.group-row th + th,
+  thead tr.detail-row th.group-start,
+  tbody td.group-start {
+    border-left: 1px solid var(--blue-line);
+  }
+  tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody tr:hover { background: var(--bg-soft); cursor: pointer; }
+  tbody tr.excluded { opacity: 0.5; background: #FAFAFA; }
+  .cell-status {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px; border-radius: 12px;
+    font-size: 11px; font-weight: 500;
+  }
+  .status-todo { background: #F3F4F6; color: #6B7280; }
+  .status-doing { background: #DBEAFE; color: #1E40AF; }
+  .status-done { background: #D1FAE5; color: #065F46; }
+  .status-hold { background: #FEF3C7; color: #92400E; }
+  .status-na { background: #F3F4F6; color: #9CA3AF; }
+  .status-cancel { background: #FEE2E2; color: #991B1B; }
+  .days-tag {
+    display: inline-block;
+    padding: 2px 8px; border-radius: 10px;
+    font-size: 11px; font-weight: 600;
+  }
+  .days-ok { background: #D1FAE5; color: #065F46; }
+  .days-warn { background: #FEF3C7; color: #92400E; }
+  .days-danger { background: #FEE2E2; color: #991B1B; }
+
+  /* 카드 뷰 */
+  .cards-wrap {
+    display: none;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 18px;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid var(--blue-line);
+    border-top: none;
+    max-height: calc(100vh - 280px);
+    overflow-y: auto;
+  }
+  .cards-wrap.show { display: grid; }
+  .c-card {
+    background: #fff;
+    border: 1px solid var(--blue-line);
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .c-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(13,71,161,0.08);
+    border-color: var(--orange);
+  }
+  .c-card.excluded { opacity: 0.55; }
+  .c-card-head {
+    padding: 14px 16px;
+    background: var(--blue-pastel);
+    border-bottom: 1px solid var(--blue-line);
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+  }
+  .c-card-head .vendor { font-size: 16px; font-weight: 700; color: var(--navy); margin-bottom: 3px; }
+  .c-card-head .sub { font-size: 12px; color: var(--text-light); }
+  .c-card-head .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+  .c-tag {
+    font-size: 10px; padding: 2px 8px; border-radius: 10px;
+    background: #fff; color: var(--navy); font-weight: 600;
+    border: 1px solid var(--blue-line);
+  }
+  .c-section { padding: 12px 16px; border-bottom: 1px solid var(--blue-line); }
+  .c-section:last-child { border-bottom: none; }
+  .c-section-title {
+    font-size: 11px; font-weight: 700; color: var(--navy);
+    margin-bottom: 8px;
+  }
+  .c-kv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: 12px; }
+  .c-kv { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; }
+  .c-kv .k { color: var(--text-light); font-size: 11px; }
+  .c-kv .v { color: var(--text); font-weight: 500; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .c-kv.full { grid-column: span 2; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 200; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 920px;
+    max-height: 92vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-header h3 { font-size: 17px; font-weight: 700; }
+  .modal-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+  .modal-footer {
+    padding: 14px 24px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: flex-end; gap: 8px;
+    background: var(--bg-soft);
+  }
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--orange);
+    margin: 18px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--orange-light);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .section-title:first-child { margin-top: 0; }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group.col-2 { grid-column: span 2; }
+  .form-group.col-3 { grid-column: span 3; }
+  .form-group label {
+    font-size: 12px; font-weight: 500;
+    color: var(--text-light);
+  }
+  .form-group label .required { color: var(--orange); }
+  .form-group input, .form-group select, .form-group textarea {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+    background: #fff;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none;
+    border-color: var(--orange);
+    box-shadow: 0 0 0 3px var(--orange-light);
+  }
+  .form-group input[readonly] { background: var(--bg-soft); color: var(--text-light); }
+  .form-group textarea { resize: vertical; min-height: 60px; }
+  .checkbox-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px;
+    background: var(--bg-soft);
+    border-radius: 6px;
+  }
+  .checkbox-row input { width: 16px; height: 16px; accent-color: var(--orange); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--text);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 300;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--danger); }
+
+  /* Empty state */
+  .empty {
+    padding: 80px 20px;
+    text-align: center;
+    color: var(--text-light);
+    background: #fff;
+    border: 1px solid var(--blue-line);
+    border-top: none;
+  }
+  .empty .big { font-size: 40px; margin-bottom: 12px; }
+
+  @media (max-width: 1100px) {
+    .form-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 640px) {
+    main { padding: 16px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.col-2, .form-group.col-3 { grid-column: span 1; }
+    .tab { padding: 10px 14px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">외</div>
+    <div>
+      <h1>외주 계약 및 정산 관리 시스템</h1>
+      <div class="sub">Outsourcing Contract & Settlement Manager</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonImport(event)" />
+    <button class="btn" onclick="document.getElementById('jsonFileInput').click()">📥 JSON 가져오기</button>
+    <button class="btn" onclick="exportJson()">📤 JSON 내보내기</button>
+    <button class="btn btn-sm" onclick="loadSampleData()">🎲 샘플</button>
+    <button class="btn btn-primary" onclick="openAddModal()">+ 새 계약 등록</button>
+  </div>
+</header>
+
+<main>
+  <!-- 탭 -->
+  <div class="tabs" id="tabs">
+    <div class="tab active" data-tab="contract" onclick="switchTab('contract')">
+      📋 계약/발주 현황 <span class="count" id="cnt-contract">0</span>
+    </div>
+    <div class="tab" data-tab="settlement" onclick="switchTab('settlement')">
+      💰 정산 현황 <span class="count" id="cnt-settlement">0</span>
+    </div>
+    <div class="tab" data-tab="report" onclick="switchTab('report')">
+      📊 신고 내역 <span class="count" id="cnt-report">0</span>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <input type="text" id="searchInput" placeholder="🔍 거래처명, 작가명, 작업명 검색..." oninput="renderList()" />
+    <select id="filterDivision" onchange="renderList()">
+      <option value="">구분(전체)</option>
+      <option value="개인">개인</option>
+      <option value="법인">법인</option>
+    </select>
+    <select id="filterStudio" onchange="renderList()">
+      <option value="">스튜디오(전체)</option>
+      <option value="E7">E7</option>
+      <option value="SSR">SSR</option>
+    </select>
+    <select id="filterPM" onchange="renderList()">
+      <option value="">PM 담당자(전체)</option>
+    </select>
+    <div class="spacer"></div>
+    <div class="view-toggle" id="viewToggle">
+      <button class="active" data-view="table" onclick="setView('table')">📊 테이블</button>
+      <button data-view="cards" onclick="setView('cards')">🗂 카드</button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap" id="tableWrap">
+    <table id="dataTable">
+      <thead id="theadEl"></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Card View -->
+  <div class="cards-wrap" id="cardsWrap"></div>
+
+  <!-- Empty -->
+  <div class="empty" id="emptyState" style="display:none">
+    <div class="big">📭</div>
+    <div id="emptyMsg">등록된 계약이 없습니다.</div>
+    <div style="margin-top: 12px;">
+      <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ 첫 계약 등록하기</button>
+      <button class="btn btn-sm" onclick="loadSampleData()">🎲 샘플 데이터 불러오기</button>
+    </div>
+  </div>
+</main>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">새 계약 등록</h3>
+      <button class="btn btn-ghost" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="contractForm" onsubmit="return false;">
+        <input type="hidden" id="f_id" />
+
+        <!-- 1. 기본 정보 -->
+        <div class="section-title">📌 1. 기본 정보</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>구분 <span class="required">*</span></label>
+            <select id="f_division" required onchange="onDivisionChange()">
+              <option value="">선택</option>
+              <option value="개인">개인</option>
+              <option value="법인">법인</option>
+            </select>
+          </div>
+          <div class="form-group col-2">
+            <label>계약구분 <span class="required">*</span></label>
+            <select id="f_contractType" required>
+              <option value="">선택</option>
+              <option value="신규(NDA)">신규(NDA)</option>
+              <option value="신규(발주별도)">신규(발주별도)</option>
+              <option value="재계약(발주별도)">재계약(발주별도)</option>
+              <option value="발주">발주</option>
+              <option value="재계약(발주포함)">재계약(발주포함)</option>
+              <option value="변경/해지/갱신">변경/해지/갱신</option>
+            </select>
+          </div>
+          <div class="form-group col-2">
+            <label>거래처명 <span class="required">*</span></label>
+            <input type="text" id="f_vendor" required placeholder="ex) 홍길동 / (주)예시" />
+          </div>
+          <div class="form-group">
+            <label>스튜디오</label>
+            <select id="f_studio">
+              <option value="">선택</option>
+              <option value="E7">E7</option>
+              <option value="SSR">SSR</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>작업구분</label>
+            <select id="f_workType">
+              <option value="">선택</option>
+              <option value="아트(일러스트)">아트(일러스트)</option>
+              <option value="아트(그래픽)">아트(그래픽)</option>
+              <option value="시나리오">시나리오</option>
+              <option value="사운드(일반)">사운드(일반)</option>
+              <option value="사운드(성우)">사운드(성우)</option>
+              <option value="사운드(PV)">사운드(PV)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>거래처등록</label>
+            <select id="f_vendorReg">
+              <option value="">선택</option>
+              <option value="미해당">미해당</option>
+              <option value="신청">신청</option>
+              <option value="완료">완료</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>계약현황 <small style="color:var(--text-light);font-weight:400">(만료일 기준 자동)</small></label>
+            <select id="f_contractStatus">
+              <option value="">선택</option>
+              <option value="진행중">진행중</option>
+              <option value="완료">완료</option>
+              <option value="중도해지">중도해지</option>
+              <option value="보류">보류</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>고용보험</label>
+            <select id="f_employment">
+              <option value="">선택</option>
+              <option value="미해당">미해당</option>
+              <option value="예정">예정</option>
+              <option value="가입완료">가입완료</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 2. 요청 단계 -->
+        <div class="section-title">🚀 2. 요청 단계</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>요청일</label>
+            <input type="date" id="f_requestDate" onchange="updateDaysToProcess()" />
+          </div>
+          <div class="form-group">
+            <label>처리 시작일</label>
+            <input type="date" id="f_startProcessDate" onchange="updateDaysToProcess()" />
+          </div>
+          <div class="form-group">
+            <label>소요일수 <small style="color:var(--text-light);font-weight:400">(자동)</small></label>
+            <input type="text" id="f_daysToProcess" readonly />
+          </div>
+          <div class="form-group">
+            <label>작가명</label>
+            <input type="text" id="f_writer" placeholder="작가명" />
+          </div>
+          <div class="form-group">
+            <label>PM 담당자</label>
+            <input type="text" id="f_pmManager" placeholder="PM 담당자" />
+          </div>
+          <div class="form-group">
+            <label>작업명</label>
+            <input type="text" id="f_workName" placeholder="작업명" />
+          </div>
+          <div class="form-group">
+            <label>후보자 평가</label>
+            <select id="f_candidateEval">
+              <option value="">선택</option>
+              <option value="미해당">미해당</option>
+              <option value="미진행">미진행</option>
+              <option value="진행중">진행중</option>
+              <option value="완료">완료</option>
+              <option value="보류">보류</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>발주/계약 초안</label>
+            <select id="f_draft">
+              <option value="">선택</option>
+              <option value="PM팀검토중">PM팀검토중</option>
+              <option value="완료">완료</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>법률검토</label>
+            <select id="f_legal">
+              <option value="">선택</option>
+              <option value="미해당">미해당</option>
+              <option value="예정">예정</option>
+              <option value="PM팀검토중">PM팀검토중</option>
+              <option value="완료">완료</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 3. 체결 단계 -->
+        <div class="section-title">✍️ 3. 체결 단계</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label id="lbl_reportDraft">계약 체결 보고(기안서(보고))</label>
+            <select id="f_reportDraft">
+              <option value="">선택</option>
+              <option value="미해당">미해당</option>
+              <option value="예정">예정</option>
+              <option value="결재중">결재중</option>
+              <option value="완료">완료</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>계약 체결 보고(지출품의)</label>
+            <select id="f_reportExpense">
+              <option value="">선택</option>
+              <option value="미해당">미해당</option>
+              <option value="예정">예정</option>
+              <option value="결재중">결재중</option>
+              <option value="완료">완료</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>전자서명</label>
+            <select id="f_esign">
+              <option value="">선택</option>
+              <option value="예정">예정</option>
+              <option value="요청중">요청중</option>
+              <option value="진행중">진행중</option>
+              <option value="완료">완료</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>시작일</label>
+            <input type="date" id="f_startDate" onchange="updateRemainingDays()" />
+          </div>
+          <div class="form-group">
+            <label>만료일</label>
+            <input type="date" id="f_endDate" onchange="updateRemainingDays(); autoUpdateContractStatus();" />
+          </div>
+          <div class="form-group">
+            <label>잔여일수 <small style="color:var(--text-light);font-weight:400">(오늘 기준 자동)</small></label>
+            <input type="text" id="f_remainingDays" readonly />
+          </div>
+        </div>
+
+        <!-- 4. 정산 단계 -->
+        <div class="section-title">💰 4. 정산 단계</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>작업/검수</label>
+            <select id="f_workQc">
+              <option value="">선택</option>
+              <option value="진행중">진행중</option>
+              <option value="결재중">결재중</option>
+              <option value="최종완료">최종완료</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>지출품의서</label>
+            <select id="f_expenseApproval">
+              <option value="">선택</option>
+              <option value="미해당">미해당</option>
+              <option value="예정">예정</option>
+              <option value="결재중">결재중</option>
+              <option value="완료">완료</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>세인정산서</label>
+            <select id="f_taxInvoice">
+              <option value="">선택</option>
+              <option value="미해당">미해당</option>
+              <option value="예정">예정</option>
+              <option value="결재중">결재중</option>
+              <option value="완료">완료</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>지급완료일</label>
+            <input type="date" id="f_paidDate" />
+          </div>
+          <div class="form-group col-2">
+            <label>금액(원) <small style="color:var(--text-light);font-weight:400">※ 개인:제세공과금 포함 / 법인:부가세 별도</small></label>
+            <input type="text" id="f_amount" placeholder="0" oninput="formatAmountInput(this)" inputmode="numeric" />
+          </div>
+        </div>
+
+        <!-- 5. 신고 단계 -->
+        <div class="section-title">📊 5. 신고 단계</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>지급명세서 전달</label>
+            <select id="f_paymentStatement">
+              <option value="">선택</option>
+              <option value="미해당">미해당</option>
+              <option value="예정">예정</option>
+              <option value="진행중">진행중</option>
+              <option value="완료">완료</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>국세청 신고</label>
+            <select id="f_nationalTax">
+              <option value="">선택</option>
+              <option value="미해당">미해당</option>
+              <option value="예정">예정</option>
+              <option value="진행중">진행중</option>
+              <option value="완료">완료</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <div class="checkbox-row">
+              <input type="checkbox" id="f_excluded" />
+              <label for="f_excluded" style="margin:0; cursor:pointer">종료 제외 (비활성)</label>
+            </div>
+          </div>
+          <div class="form-group col-3">
+            <label>비고</label>
+            <textarea id="f_note" placeholder="추가 메모..."></textarea>
+          </div>
+          <div class="form-group col-2">
+            <label>최종 수정자</label>
+            <input type="text" id="f_updatedBy" placeholder="이름 (협업 식별용)" />
+          </div>
+          <div class="form-group">
+            <label>최종 수정일</label>
+            <input type="text" id="f_updatedAt" readonly />
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger" id="deleteBtn" onclick="deleteCurrent()" style="margin-right:auto; display:none">🗑 삭제</button>
+      <button class="btn" onclick="closeModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveContract()">저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ========== 상태 관리 ==========
+let contracts = [];
+let currentTab = 'contract'; // 'contract' | 'settlement' | 'report'
+let currentView = 'table';
+let editingId = null;
+
+const STORAGE_KEY = 'outsourcing_contracts_v2';
+
+// ========== 필드 정의 ==========
+const FIELDS = [
+  'division','contractType','vendor','studio','workType',
+  'vendorReg','contractStatus','employment',
+  'requestDate','startProcessDate','writer','pmManager','workName',
+  'candidateEval','draft','legal',
+  'reportDraft','reportExpense','esign','startDate','endDate',
+  'workQc','expenseApproval','taxInvoice','paidDate','amount',
+  'paymentStatement','nationalTax',
+  'note','updatedBy'
+];
+
+// ========== 초기화 ==========
+document.addEventListener('DOMContentLoaded', () => {
+  loadFromLocal();
+  buildTableHead();
+  renderAll();
+});
+
+// ========== 로컬 저장소 ==========
+function loadFromLocal() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    contracts = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    contracts = [];
+  }
+}
+function saveToLocal() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(contracts));
+}
+
+// ========== 탭 분류 로직 ==========
+// 신고 내역: 국세청 신고 = 완료
+// 정산 현황: 작업/검수 = 최종완료 OR 정산 단계 입력 시작
+// 계약/발주 현황: 그 외
+function getTab(c) {
+  if (c.nationalTax === '완료') return 'report';
+  const settlementStarted = c.workQc === '최종완료'
+    || hasVal(c.expenseApproval) || hasVal(c.taxInvoice)
+    || hasVal(c.paidDate) || hasVal(c.amount);
+  if (settlementStarted) return 'settlement';
+  return 'contract';
+}
+function hasVal(v) { return v !== null && v !== undefined && String(v).trim() !== ''; }
+
+// ========== 만료일 기준 계약현황 자동 ==========
+function autoUpdateContractStatus() {
+  const cur = document.getElementById('f_contractStatus').value;
+  // 사용자가 중도해지/보류를 직접 선택했다면 자동 덮어쓰지 않음
+  if (cur === '중도해지' || cur === '보류') return;
+  const end = document.getElementById('f_endDate').value;
+  if (!end) return;
+  const endD = new Date(end);
+  const today = new Date(); today.setHours(0,0,0,0);
+  document.getElementById('f_contractStatus').value = (endD < today) ? '완료' : '진행중';
+}
+
+// ========== 일수 계산 ==========
+function updateDaysToProcess() {
+  const r = document.getElementById('f_requestDate').value;
+  const s = document.getElementById('f_startProcessDate').value;
+  if (!r || !s) { document.getElementById('f_daysToProcess').value = ''; return; }
+  const diff = Math.floor((new Date(s) - new Date(r)) / (1000*60*60*24));
+  document.getElementById('f_daysToProcess').value = diff + '일';
+}
+function updateRemainingDays() {
+  const end = document.getElementById('f_endDate').value;
+  if (!end) { document.getElementById('f_remainingDays').value = ''; return; }
+  const endD = new Date(end);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.floor((endD - today) / (1000*60*60*24));
+  document.getElementById('f_remainingDays').value = diff < 0 ? `만료 ${-diff}일 경과` : (diff === 0 ? 'D-Day' : `${diff}일 남음`);
+}
+
+// ========== 구분 변경 시: 법인이면 기안서 보고 강조 ==========
+function onDivisionChange() {
+  const div = document.getElementById('f_division').value;
+  const lbl = document.getElementById('lbl_reportDraft');
+  if (div === '법인') {
+    lbl.innerHTML = '계약 체결 보고(기안서(보고)) <span class="required">*</span>';
+  } else {
+    lbl.innerHTML = '계약 체결 보고(기안서(보고))';
+  }
+}
+
+// ========== 금액 천 단위 콤마 ==========
+function formatAmountInput(input) {
+  const raw = input.value.replace(/[^0-9]/g, '');
+  input.value = raw ? Number(raw).toLocaleString() : '';
+}
+function formatAmount(amount, division) {
+  if (!amount && amount !== 0) return '';
+  const n = Number(String(amount).replace(/[^0-9.\-]/g, ''));
+  if (isNaN(n) || n === 0) return '';
+  const formatted = n.toLocaleString() + '원';
+  if (division === '개인') return formatted + ' (제세공과금 포함)';
+  if (division === '법인') return formatted + ' (VAT별도)';
+  return formatted;
+}
+
+// ========== 렌더링 ==========
+function renderAll() {
+  updateCounts();
+  populatePMFilter();
+  renderList();
+}
+function updateCounts() {
+  const counts = { contract: 0, settlement: 0, report: 0 };
+  contracts.filter(c => !c.excluded).forEach(c => {
+    const t = getTab(c);
+    if (counts[t] !== undefined) counts[t]++;
+  });
+  document.getElementById('cnt-contract').textContent = counts.contract;
+  document.getElementById('cnt-settlement').textContent = counts.settlement;
+  document.getElementById('cnt-report').textContent = counts.report;
+}
+function populatePMFilter() {
+  const select = document.getElementById('filterPM');
+  const cur = select.value;
+  const pms = [...new Set(contracts.map(c => c.pmManager).filter(Boolean))].sort();
+  select.innerHTML = '<option value="">PM 담당자(전체)</option>' + pms.map(p => `<option value="${p}">${p}</option>`).join('');
+  select.value = cur;
+}
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === tab);
+  });
+  buildTableHead();
+  renderList();
+}
+function setView(view) {
+  currentView = view;
+  document.querySelectorAll('#viewToggle button').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === view);
+  });
+  document.getElementById('tableWrap').style.display = view === 'table' ? 'block' : 'none';
+  document.getElementById('cardsWrap').classList.toggle('show', view === 'cards');
+  renderList();
+}
+function getFilteredRows() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const div = document.getElementById('filterDivision').value;
+  const studio = document.getElementById('filterStudio').value;
+  const pm = document.getElementById('filterPM').value;
+
+  let rows = contracts.filter(c => !c.excluded);
+  rows = rows.filter(c => getTab(c) === currentTab);
+  if (search) rows = rows.filter(c =>
+    (c.vendor || '').toLowerCase().includes(search) ||
+    (c.writer || '').toLowerCase().includes(search) ||
+    (c.workName || '').toLowerCase().includes(search)
+  );
+  if (div) rows = rows.filter(c => c.division === div);
+  if (studio) rows = rows.filter(c => c.studio === studio);
+  if (pm) rows = rows.filter(c => c.pmManager === pm);
+  return rows;
+}
+
+function buildTableHead() {
+  const thead = document.getElementById('theadEl');
+  // 탭별 컬럼 구성
+  if (currentTab === 'contract') {
+    thead.innerHTML = `
+      <tr class="group-row">
+        <th colspan="8">📌 기본 정보</th>
+        <th colspan="6">🚀 요청 단계</th>
+        <th colspan="6">✍️ 체결 단계</th>
+      </tr>
+      <tr class="detail-row">
+        <th class="group-start">#</th>
+        <th>구분</th>
+        <th>계약구분</th>
+        <th>거래처명</th>
+        <th>스튜디오</th>
+        <th>작업구분</th>
+        <th>거래처등록</th>
+        <th>계약현황</th>
+        <th class="group-start">요청일</th>
+        <th>처리시작일</th>
+        <th>소요일수</th>
+        <th>작가명/PM/작업명</th>
+        <th>후보자 평가</th>
+        <th>법률검토</th>
+        <th class="group-start">계약체결보고(기안)</th>
+        <th>계약체결보고(지출)</th>
+        <th>전자서명</th>
+        <th>시작일</th>
+        <th>만료일</th>
+        <th>잔여일수</th>
+      </tr>`;
+  } else if (currentTab === 'settlement') {
+    thead.innerHTML = `
+      <tr class="group-row">
+        <th colspan="6">📌 기본 정보</th>
+        <th colspan="2">✍️ 체결</th>
+        <th colspan="5">💰 정산 단계</th>
+      </tr>
+      <tr class="detail-row">
+        <th class="group-start">#</th>
+        <th>구분</th>
+        <th>거래처명</th>
+        <th>스튜디오</th>
+        <th>작업구분</th>
+        <th>PM 담당자</th>
+        <th class="group-start">시작일</th>
+        <th>만료일</th>
+        <th class="group-start">작업/검수</th>
+        <th>지출품의서</th>
+        <th>세인정산서</th>
+        <th>지급완료일</th>
+        <th>금액(원)</th>
+      </tr>`;
+  } else {
+    thead.innerHTML = `
+      <tr class="group-row">
+        <th colspan="6">📌 기본 정보</th>
+        <th colspan="3">💰 정산</th>
+        <th colspan="3">📊 신고 단계</th>
+      </tr>
+      <tr class="detail-row">
+        <th class="group-start">#</th>
+        <th>구분</th>
+        <th>거래처명</th>
+        <th>스튜디오</th>
+        <th>작업구분</th>
+        <th>PM 담당자</th>
+        <th class="group-start">지급완료일</th>
+        <th>금액(원)</th>
+        <th>고용보험</th>
+        <th class="group-start">지급명세서 전달</th>
+        <th>국세청 신고</th>
+        <th>비고</th>
+      </tr>`;
+  }
+}
+
+function renderList() {
+  const rows = getFilteredRows();
+  const empty = rows.length === 0;
+  document.getElementById('emptyState').style.display = empty ? 'block' : 'none';
+  document.getElementById('tableWrap').style.display = (!empty && currentView === 'table') ? 'block' : 'none';
+  document.getElementById('cardsWrap').classList.toggle('show', !empty && currentView === 'cards');
+
+  const emptyMsg = {
+    contract: '계약/발주 현황 데이터가 없습니다.',
+    settlement: '정산 현황 데이터가 없습니다. 작업/검수가 "최종완료"되거나 정산 입력 시 표시됩니다.',
+    report: '신고 내역이 없습니다. 국세청 신고가 "완료"된 건이 표시됩니다.'
+  };
+  document.getElementById('emptyMsg').textContent = emptyMsg[currentTab];
+
+  if (currentView === 'table') {
+    document.getElementById('tbody').innerHTML = rows.map((c, i) => renderRow(c, i + 1)).join('');
+  } else {
+    document.getElementById('cardsWrap').innerHTML = rows.map(c => renderCard(c)).join('');
+  }
+}
+
+function renderRow(c, idx) {
+  if (currentTab === 'contract') {
+    return `<tr onclick="openEditModal('${c.id}')">
+      <td class="group-start">${idx}</td>
+      <td><strong>${c.division || '-'}</strong></td>
+      <td>${c.contractType || '-'}</td>
+      <td><strong>${c.vendor || '-'}</strong></td>
+      <td>${c.studio || '-'}</td>
+      <td>${c.workType || '-'}</td>
+      <td>${badge(c.vendorReg)}</td>
+      <td>${badge(c.contractStatus)}</td>
+      <td class="group-start">${c.requestDate || '-'}</td>
+      <td>${c.startProcessDate || '-'}</td>
+      <td>${daysToProcess(c) || '-'}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis">${composeWho(c)}</td>
+      <td>${badge(c.candidateEval)}</td>
+      <td>${badge(c.legal)}</td>
+      <td class="group-start">${badge(c.reportDraft)}</td>
+      <td>${badge(c.reportExpense)}</td>
+      <td>${badge(c.esign)}</td>
+      <td>${c.startDate || '-'}</td>
+      <td>${c.endDate || '-'}</td>
+      <td>${daysBadge(c.endDate)}</td>
+    </tr>`;
+  } else if (currentTab === 'settlement') {
+    return `<tr onclick="openEditModal('${c.id}')">
+      <td class="group-start">${idx}</td>
+      <td><strong>${c.division || '-'}</strong></td>
+      <td><strong>${c.vendor || '-'}</strong></td>
+      <td>${c.studio || '-'}</td>
+      <td>${c.workType || '-'}</td>
+      <td>${c.pmManager || '-'}</td>
+      <td class="group-start">${c.startDate || '-'}</td>
+      <td>${c.endDate || '-'}</td>
+      <td class="group-start">${badge(c.workQc)}</td>
+      <td>${badge(c.expenseApproval)}</td>
+      <td>${badge(c.taxInvoice)}</td>
+      <td>${c.paidDate || '-'}</td>
+      <td><strong>${formatAmount(c.amount, c.division) || '-'}</strong></td>
+    </tr>`;
+  } else {
+    return `<tr onclick="openEditModal('${c.id}')">
+      <td class="group-start">${idx}</td>
+      <td><strong>${c.division || '-'}</strong></td>
+      <td><strong>${c.vendor || '-'}</strong></td>
+      <td>${c.studio || '-'}</td>
+      <td>${c.workType || '-'}</td>
+      <td>${c.pmManager || '-'}</td>
+      <td class="group-start">${c.paidDate || '-'}</td>
+      <td><strong>${formatAmount(c.amount, c.division) || '-'}</strong></td>
+      <td>${badge(c.employment)}</td>
+      <td class="group-start">${badge(c.paymentStatement)}</td>
+      <td>${badge(c.nationalTax)}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${c.note || '-'}</td>
+    </tr>`;
+  }
+}
+
+function composeWho(c) {
+  const parts = [];
+  if (c.writer) parts.push(c.writer);
+  if (c.pmManager) parts.push('PM:' + c.pmManager);
+  if (c.workName) parts.push(c.workName);
+  return parts.join(' / ') || '-';
+}
+function daysToProcess(c) {
+  if (!c.requestDate || !c.startProcessDate) return '';
+  const diff = Math.floor((new Date(c.startProcessDate) - new Date(c.requestDate)) / (1000*60*60*24));
+  return diff + '일';
+}
+
+function renderCard(c) {
+  const tabLabels = { contract: '📋 계약/발주', settlement: '💰 정산', report: '📊 신고' };
+  const t = getTab(c);
+  return `<div class="c-card" onclick="openEditModal('${c.id}')">
+    <div class="c-card-head">
+      <div style="flex:1;min-width:0">
+        <div class="vendor">${c.vendor || '(미입력)'}</div>
+        <div class="sub">${c.studio || '-'} · ${c.pmManager || '-'}</div>
+        <div class="tags">
+          ${c.division ? `<span class="c-tag">${c.division}</span>` : ''}
+          ${c.contractType ? `<span class="c-tag">${c.contractType}</span>` : ''}
+          ${c.workType ? `<span class="c-tag">${c.workType}</span>` : ''}
+        </div>
+      </div>
+      <span class="c-tag" style="background:var(--orange);color:#fff;border-color:var(--orange)">${tabLabels[t]}</span>
+    </div>
+    <div class="c-section">
+      <div class="c-section-title">📌 기본 정보</div>
+      <div class="c-kv-grid">
+        ${kv('거래처등록', c.vendorReg)}
+        ${kv('계약현황', c.contractStatus)}
+        ${kv('고용보험', c.employment)}
+      </div>
+    </div>
+    <div class="c-section">
+      <div class="c-section-title">🚀 요청 단계</div>
+      <div class="c-kv-grid">
+        ${kv('요청일', c.requestDate)}
+        ${kv('처리시작일', c.startProcessDate)}
+        ${kv('소요일수', daysToProcess(c))}
+        ${kv('작가명', c.writer)}
+        ${kv('PM 담당자', c.pmManager)}
+        ${kv('작업명', c.workName, true)}
+        ${kv('후보자 평가', c.candidateEval)}
+        ${kv('발주/계약 초안', c.draft)}
+        ${kv('법률검토', c.legal, true)}
+      </div>
+    </div>
+    <div class="c-section">
+      <div class="c-section-title">✍️ 체결 단계</div>
+      <div class="c-kv-grid">
+        ${kv('계약체결보고(기안)', c.reportDraft)}
+        ${kv('계약체결보고(지출)', c.reportExpense)}
+        ${kv('전자서명', c.esign)}
+        ${kv('시작일', c.startDate)}
+        ${kv('만료일', c.endDate)}
+        <div class="c-kv"><span class="k">잔여일수</span><span class="v">${daysBadge(c.endDate)}</span></div>
+      </div>
+    </div>
+    <div class="c-section">
+      <div class="c-section-title">💰 정산 단계</div>
+      <div class="c-kv-grid">
+        ${kv('작업/검수', c.workQc)}
+        ${kv('지출품의서', c.expenseApproval)}
+        ${kv('세인정산서', c.taxInvoice)}
+        ${kv('지급완료일', c.paidDate)}
+        <div class="c-kv full"><span class="k">금액</span><span class="v" style="max-width:none">${formatAmount(c.amount, c.division) || '-'}</span></div>
+      </div>
+    </div>
+    <div class="c-section">
+      <div class="c-section-title">📊 신고 단계</div>
+      <div class="c-kv-grid">
+        ${kv('지급명세서 전달', c.paymentStatement)}
+        ${kv('국세청 신고', c.nationalTax)}
+        ${c.note ? `<div class="c-kv full"><span class="k">📝 비고</span><span class="v" style="max-width:none">${c.note}</span></div>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+function kv(k, v, full) {
+  const val = (v && v !== '') ? v : '<span style="color:#D1D5DB">-</span>';
+  return `<div class="c-kv${full ? ' full' : ''}"><span class="k">${k}</span><span class="v">${val}</span></div>`;
+}
+
+// ========== 상태 뱃지 ==========
+function badge(v) {
+  if (!v) return '<span style="color:#D1D5DB">-</span>';
+  const done = ['완료','가입완료','최종완료'];
+  const doing = ['진행중','결재중','요청중','PM팀검토중','신청'];
+  const planned = ['예정'];
+  const hold = ['보류','미진행'];
+  const na = ['미해당'];
+  const cancel = ['중도해지'];
+  let cls = 'status-todo';
+  if (done.includes(v)) cls = 'status-done';
+  else if (doing.includes(v)) cls = 'status-doing';
+  else if (planned.includes(v)) cls = 'status-doing';
+  else if (hold.includes(v)) cls = 'status-hold';
+  else if (na.includes(v)) cls = 'status-na';
+  else if (cancel.includes(v)) cls = 'status-cancel';
+  return `<span class="cell-status ${cls}">${v}</span>`;
+}
+function daysBadge(endDate) {
+  if (!endDate) return '<span style="color:#D1D5DB">-</span>';
+  const end = new Date(endDate);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.floor((end - today) / (1000*60*60*24));
+  const cls = diff < 0 ? 'days-danger' : diff <= 30 ? 'days-warn' : 'days-ok';
+  const text = diff < 0 ? `만료 ${-diff}일 경과` : (diff === 0 ? 'D-Day' : `D-${diff}`);
+  return `<span class="days-tag ${cls}">${text}</span>`;
+}
+
+// ========== 모달 ==========
+function openAddModal() {
+  editingId = null;
+  document.getElementById('modalTitle').textContent = '새 계약 등록';
+  document.getElementById('deleteBtn').style.display = 'none';
+  document.getElementById('contractForm').reset();
+  document.getElementById('f_id').value = '';
+  document.getElementById('f_daysToProcess').value = '';
+  document.getElementById('f_remainingDays').value = '';
+  document.getElementById('f_updatedAt').value = '';
+  onDivisionChange();
+  document.getElementById('editModal').classList.add('open');
+}
+function openEditModal(id) {
+  const c = contracts.find(x => x.id === id);
+  if (!c) return;
+  editingId = id;
+  document.getElementById('modalTitle').textContent = `계약 수정 - ${c.vendor || ''}`;
+  document.getElementById('deleteBtn').style.display = 'inline-flex';
+  document.getElementById('f_id').value = c.id;
+  FIELDS.forEach(f => {
+    const el = document.getElementById('f_' + f);
+    if (!el) return;
+    if (f === 'amount' && c[f]) {
+      el.value = Number(String(c[f]).replace(/[^0-9]/g, '')).toLocaleString();
+    } else {
+      el.value = c[f] || '';
+    }
+  });
+  document.getElementById('f_excluded').checked = !!c.excluded;
+  document.getElementById('f_updatedAt').value = c.updated_at ? new Date(c.updated_at).toLocaleString('ko-KR') : '';
+  updateDaysToProcess();
+  updateRemainingDays();
+  onDivisionChange();
+  document.getElementById('editModal').classList.add('open');
+}
+function closeModal() { document.getElementById('editModal').classList.remove('open'); }
+
+function saveContract() {
+  const vendor = document.getElementById('f_vendor').value.trim();
+  const division = document.getElementById('f_division').value;
+  const contractType = document.getElementById('f_contractType').value;
+  if (!division) { toast('구분을 선택하세요', 'error'); return; }
+  if (!contractType) { toast('계약구분을 선택하세요', 'error'); return; }
+  if (!vendor) { toast('거래처명을 입력하세요', 'error'); return; }
+
+  // 법인 필수: 계약 체결 보고(기안서(보고))
+  if (division === '법인') {
+    const rd = document.getElementById('f_reportDraft').value;
+    if (!rd) { toast('법인 건은 [계약 체결 보고(기안서(보고))]가 필수입니다', 'error'); return; }
+  }
+
+  const payload = {};
+  FIELDS.forEach(f => {
+    const el = document.getElementById('f_' + f);
+    if (!el) return;
+    let v = el.value;
+    if (f === 'amount') v = String(v).replace(/[^0-9]/g, '');
+    payload[f] = v;
+  });
+  payload.excluded = document.getElementById('f_excluded').checked;
+  payload.updated_at = new Date().toISOString();
+
+  if (editingId) {
+    const idx = contracts.findIndex(c => c.id === editingId);
+    if (idx >= 0) contracts[idx] = { ...contracts[idx], ...payload, id: editingId };
+  } else {
+    contracts.unshift({ ...payload, id: crypto.randomUUID() });
+  }
+  saveToLocal();
+  renderAll();
+  closeModal();
+  toast('저장되었습니다', 'success');
+}
+
+function deleteCurrent() {
+  if (!editingId) return;
+  if (!confirm('정말 삭제하시겠습니까?')) return;
+  contracts = contracts.filter(c => c.id !== editingId);
+  saveToLocal();
+  renderAll();
+  closeModal();
+  toast('삭제되었습니다', 'success');
+}
+
+// ========== JSON 가져오기/내보내기 ==========
+function exportJson() {
+  if (contracts.length === 0) { toast('내보낼 데이터가 없습니다', 'error'); return; }
+  const blob = new Blob([JSON.stringify(contracts, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0,10).replace(/-/g, '');
+  a.href = url;
+  a.download = `외주계약_백업_${stamp}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(`${contracts.length}건 내보냄`, 'success');
+}
+async function handleJsonImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!Array.isArray(data)) throw new Error('JSON 형식이 올바르지 않습니다 (배열이어야 함)');
+    const choice = confirm(`${data.length}건의 데이터를 가져옵니다.\n\n[확인] 기존 데이터 유지하고 추가\n[취소] 기존 데이터 모두 교체`);
+    const items = data.map(d => ({ ...d, id: d.id || crypto.randomUUID(), updated_at: d.updated_at || new Date().toISOString() }));
+    if (choice) {
+      contracts = [...items, ...contracts];
+    } else {
+      if (!confirm('⚠️ 기존 데이터를 모두 삭제하고 교체합니다. 계속할까요?')) {
+        event.target.value = ''; return;
+      }
+      contracts = items;
+    }
+    saveToLocal();
+    renderAll();
+    toast(`${items.length}건 가져옴`, 'success');
+  } catch (e) {
+    alert('JSON 가져오기 실패:\n' + e.message);
+  }
+  event.target.value = '';
+}
+
+// ========== 샘플 데이터 ==========
+function loadSampleData() {
+  if (contracts.length > 0 && !confirm('기존 데이터를 유지한 채 샘플을 추가합니다. 계속할까요?')) return;
+  const today = new Date();
+  const dFromNow = (d) => { const x = new Date(today); x.setDate(x.getDate() + d); return x.toISOString().slice(0,10); };
+  const sample = [
+    { id: crypto.randomUUID(), division:'개인', contractType:'신규(발주별도)', vendor:'김작가', studio:'E7', workType:'아트(일러스트)',
+      vendorReg:'완료', contractStatus:'진행중', employment:'미해당',
+      requestDate:dFromNow(-50), startProcessDate:dFromNow(-45), writer:'김작가', pmManager:'홍길동', workName:'메인캐릭터 일러스트',
+      candidateEval:'완료', draft:'완료', legal:'완료',
+      reportDraft:'미해당', reportExpense:'완료', esign:'완료', startDate:dFromNow(-30), endDate:dFromNow(20),
+      workQc:'진행중', expenseApproval:'', taxInvoice:'', paidDate:'', amount:'',
+      paymentStatement:'', nationalTax:'',
+      note:'1차 검수 진행중', updatedBy:'지아', updated_at:new Date().toISOString() },
+    { id: crypto.randomUUID(), division:'법인', contractType:'재계약(발주포함)', vendor:'(주)픽셀아트', studio:'SSR', workType:'아트(그래픽)',
+      vendorReg:'완료', contractStatus:'진행중', employment:'미해당',
+      requestDate:dFromNow(-60), startProcessDate:dFromNow(-55), writer:'박그래픽', pmManager:'이매니저', workName:'UI 그래픽 패키지',
+      candidateEval:'완료', draft:'완료', legal:'완료',
+      reportDraft:'완료', reportExpense:'완료', esign:'완료', startDate:dFromNow(-40), endDate:dFromNow(67),
+      workQc:'최종완료', expenseApproval:'완료', taxInvoice:'완료', paidDate:dFromNow(-3), amount:'22000000',
+      paymentStatement:'예정', nationalTax:'예정',
+      note:'VAT별도, 분할지급(1/2차)', updatedBy:'행정팀', updated_at:new Date().toISOString() },
+    { id: crypto.randomUUID(), division:'개인', contractType:'신규(NDA)', vendor:'박사운드', studio:'E7', workType:'사운드(일반)',
+      vendorReg:'신청', contractStatus:'', employment:'예정',
+      requestDate:dFromNow(-10), startProcessDate:dFromNow(-5), writer:'박사운드', pmManager:'최PM', workName:'BGM 5트랙',
+      candidateEval:'완료', draft:'PM팀검토중', legal:'예정',
+      reportDraft:'', reportExpense:'', esign:'', startDate:'', endDate:'',
+      workQc:'', expenseApproval:'', taxInvoice:'', paidDate:'', amount:'',
+      paymentStatement:'', nationalTax:'',
+      note:'초안 검토 중', updatedBy:'지아', updated_at:new Date().toISOString() },
+    { id: crypto.randomUUID(), division:'개인', contractType:'신규(발주별도)', vendor:'이시나리오', studio:'SSR', workType:'시나리오',
+      vendorReg:'완료', contractStatus:'완료', employment:'가입완료',
+      requestDate:dFromNow(-110), startProcessDate:dFromNow(-105), writer:'이시나리오', pmManager:'홍길동', workName:'메인 시나리오',
+      candidateEval:'완료', draft:'완료', legal:'완료',
+      reportDraft:'미해당', reportExpense:'완료', esign:'완료', startDate:dFromNow(-100), endDate:dFromNow(-24),
+      workQc:'최종완료', expenseApproval:'완료', taxInvoice:'미해당', paidDate:dFromNow(-20), amount:'5500000',
+      paymentStatement:'완료', nationalTax:'완료',
+      note:'종료됨', updatedBy:'행정팀', updated_at:new Date().toISOString() },
+    { id: crypto.randomUUID(), division:'개인', contractType:'발주', vendor:'정성우', studio:'E7', workType:'사운드(성우)',
+      vendorReg:'완료', contractStatus:'진행중', employment:'미해당',
+      requestDate:dFromNow(-25), startProcessDate:dFromNow(-20), writer:'정성우', pmManager:'이매니저', workName:'캐릭터 보이스 30종',
+      candidateEval:'완료', draft:'완료', legal:'완료',
+      reportDraft:'미해당', reportExpense:'완료', esign:'완료', startDate:dFromNow(-15), endDate:dFromNow(45),
+      workQc:'결재중', expenseApproval:'결재중', taxInvoice:'예정', paidDate:'', amount:'3300000',
+      paymentStatement:'', nationalTax:'',
+      note:'녹음 진행중', updatedBy:'지아', updated_at:new Date().toISOString() }
+  ];
+  contracts = [...sample, ...contracts];
+  saveToLocal();
+  renderAll();
+  toast(`샘플 데이터 ${sample.length}건 추가`, 'success');
+}
+
+// ========== Toast ==========
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + (type || '');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>

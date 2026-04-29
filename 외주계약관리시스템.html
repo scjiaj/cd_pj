@@ -503,9 +503,12 @@
     </div>
   </div>
   <div class="header-right">
+    <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="handleCsvImport(event)" />
     <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonImport(event)" />
-    <button class="btn" onclick="document.getElementById('jsonFileInput').click()">📥 JSON 가져오기</button>
-    <button class="btn" onclick="exportJson()">📤 JSON 내보내기</button>
+    <button class="btn" onclick="exportAllCSV()" title="전체 데이터를 Excel에서 열 수 있는 CSV로 내보내기">📊 엑셀 내보내기</button>
+    <button class="btn" onclick="document.getElementById('csvFileInput').click()" title="Excel에서 저장한 CSV 파일을 가져오기">📋 엑셀 가져오기</button>
+    <button class="btn" onclick="exportJson()">📤 JSON 백업</button>
+    <button class="btn" onclick="document.getElementById('jsonFileInput').click()">📥 JSON 복원</button>
     <button class="btn btn-sm" onclick="loadSampleData()">🎲 샘플</button>
     <button class="btn btn-primary" onclick="openAddModal()">+ 새 계약 등록</button>
   </div>
@@ -1014,6 +1017,42 @@ function parseAmt(c) {
 function fmtWon(n) { return (n || 0).toLocaleString('ko-KR') + '원'; }
 
 // ========== 필드 정의 ==========
+// [fieldKey, CSV 한글 헤더] — 순서가 내보내기 컬럼 순서
+const FIELD_MAP = [
+  ['division',          '구분'],
+  ['contractType',      '계약구분'],
+  ['vendor',            '거래처명'],
+  ['studio',            '스튜디오'],
+  ['workType',          '작업구분'],
+  ['vendorReg',         '거래처등록'],
+  ['contractStatus',    '계약현황'],
+  ['employment',        '고용보험'],
+  ['requestDate',       '요청일'],
+  ['startProcessDate',  '처리시작일'],
+  ['writer',            '작가명'],
+  ['pmManager',         'PM담당자'],
+  ['workName',          '작업명'],
+  ['candidateEval',     '후보자평가'],
+  ['draft',             '발주계약초안'],
+  ['legal',             '법률검토'],
+  ['reportDraft',       '기안서보고'],
+  ['reportExpense',     '지출품의보고'],
+  ['esign',             '전자서명'],
+  ['startDate',         '시작일'],
+  ['endDate',           '만료일'],
+  ['workQc',            '작업검수'],
+  ['expenseApproval',   '지출품의서'],
+  ['taxInvoice',        '세인정산서'],
+  ['paidDate',          '지급완료일'],
+  ['amount',            '금액'],
+  ['paymentStatement',  '지급명세서전달'],
+  ['nationalTax',       '국세청신고'],
+  ['note',              '비고'],
+  ['updatedBy',         '최종수정자'],
+  ['excluded',          '종료제외'],
+];
+const FIELD_MAP_REVERSE = Object.fromEntries(FIELD_MAP.map(([f, k]) => [k, f]));
+
 const FIELDS = [
   'division','contractType','vendor','studio','workType',
   'vendorReg','contractStatus','employment',
@@ -1853,6 +1892,114 @@ function downloadCSV(rows, filename) {
   a.click();
   URL.revokeObjectURL(a.href);
   toast('CSV를 내보냈습니다', 'success');
+}
+
+// ========== 엑셀(CSV) 전체 내보내기 / 가져오기 ==========
+function exportAllCSV() {
+  if (!contracts.length) { toast('내보낼 데이터가 없습니다', 'error'); return; }
+  const headers = ['id', ...FIELD_MAP.map(([, k]) => k)];
+  const rows = contracts.map(c => [
+    c.id || '',
+    ...FIELD_MAP.map(([f]) => {
+      if (f === 'excluded') return c[f] ? '예' : '아니오';
+      return c[f] != null ? c[f] : '';
+    })
+  ]);
+  downloadCSV([headers, ...rows], `외주계약_전체_${new Date().toISOString().slice(0, 10)}`);
+}
+
+async function handleCsvImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    let text = await file.text();
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // BOM 제거
+    const rows = parseCSV(text);
+    if (rows.length < 2) throw new Error('데이터 행이 없습니다.');
+
+    const headers = rows[0].map(h => h.trim());
+    const dataRows = rows.slice(1).filter(r => r.some(v => v.trim()));
+    if (!dataRows.length) throw new Error('데이터 행이 없습니다.');
+
+    if (!headers.includes('거래처명')) {
+      throw new Error('"거래처명" 컬럼을 찾을 수 없습니다.\n이 시스템에서 내보낸 CSV 파일인지 확인해주세요.');
+    }
+
+    const items = dataRows.map(row => {
+      const obj = {};
+      headers.forEach((h, i) => {
+        const val = (row[i] ?? '').trim();
+        if (h === 'id') { obj.id = val; return; }
+        const field = FIELD_MAP_REVERSE[h];
+        if (!field) return;
+        if (field === 'excluded') obj[field] = (val === '예' || val === 'TRUE' || val === 'true' || val === '1');
+        else if (field === 'amount') obj[field] = val.replace(/[^0-9]/g, '');
+        else obj[field] = val;
+      });
+      if (!obj.id) obj.id = crypto.randomUUID();
+      if (!obj.updated_at) obj.updated_at = new Date().toISOString();
+      return obj;
+    });
+
+    const mode = confirm(
+      `${items.length}건을 가져옵니다.\n\n` +
+      `[확인] 기존 데이터 유지 + 추가/업데이트\n` +
+      `[취소] 기존 데이터 전체 교체`
+    );
+
+    if (mode) {
+      let added = 0, updated = 0;
+      items.forEach(item => {
+        const idx = contracts.findIndex(c => c.id === item.id);
+        if (idx >= 0) { contracts[idx] = item; updated++; }
+        else { contracts.unshift(item); added++; }
+      });
+      toast(`${added}건 추가, ${updated}건 업데이트`, 'success');
+    } else {
+      if (!confirm('⚠️ 기존 데이터를 모두 삭제하고 교체합니다. 계속할까요?')) {
+        event.target.value = ''; return;
+      }
+      contracts = items;
+      toast(`${items.length}건으로 교체되었습니다`, 'success');
+    }
+    saveToLocal();
+    renderAll();
+  } catch (err) {
+    alert('CSV 가져오기 실패:\n' + err.message);
+  }
+  event.target.value = '';
+}
+
+function parseCSV(text) {
+  const results = [];
+  let i = 0;
+  const len = text.length;
+  while (i < len) {
+    const row = [];
+    while (i < len) {
+      if (text[i] === '"') {
+        i++;
+        let field = '';
+        while (i < len) {
+          if (text[i] === '"' && text[i + 1] === '"') { field += '"'; i += 2; }
+          else if (text[i] === '"') { i++; break; }
+          else field += text[i++];
+        }
+        row.push(field);
+        if (text[i] === ',') i++;
+      } else {
+        const start = i;
+        while (i < len && text[i] !== ',' && text[i] !== '\n' && text[i] !== '\r') i++;
+        row.push(text.slice(start, i));
+        if (text[i] === ',') i++;
+      }
+      if (i >= len || text[i] === '\n' || text[i] === '\r') break;
+    }
+    if (text[i] === '\r') i++;
+    if (text[i] === '\n') i++;
+    if (row.length && row.some(v => v)) results.push(row);
+  }
+  return results;
 }
 
 // ========== 알림 액션 ==========

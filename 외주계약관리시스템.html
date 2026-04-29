@@ -402,13 +402,75 @@
 
   @media (max-width: 1100px) {
     .form-grid { grid-template-columns: 1fr 1fr; }
+    .dash-grid { grid-template-columns: repeat(2, 1fr); }
+    .settlement-summary, .report-summary { grid-template-columns: repeat(2, 1fr); }
   }
   @media (max-width: 640px) {
     main { padding: 16px; }
     .form-grid { grid-template-columns: 1fr; }
     .form-group.col-2, .form-group.col-3 { grid-column: span 1; }
     .tab { padding: 10px 14px; font-size: 13px; }
+    .dash-grid { grid-template-columns: repeat(2, 1fr); }
+    .settlement-summary, .report-summary { grid-template-columns: 1fr 1fr; }
   }
+
+  /* ===== Dashboard ===== */
+  .dash-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:14px; }
+  .dash-card { background:#fff; border:1px solid var(--border); border-left:4px solid var(--orange); border-radius:8px; padding:16px 20px; cursor:pointer; transition:all 0.2s; }
+  .dash-card:hover { box-shadow:0 4px 12px rgba(255,107,26,0.15); transform:translateY(-2px); }
+  .dash-card .dc-label { color:var(--text-light); font-size:12px; font-weight:500; margin-bottom:6px; }
+  .dash-card .dc-value { font-size:26px; font-weight:700; }
+  .dash-card .dc-value small { font-size:13px; color:var(--text-light); font-weight:400; margin-left:4px; }
+  .dash-card .dc-sub { font-size:11px; color:var(--text-light); margin-top:4px; }
+
+  /* ===== Alert bar ===== */
+  .alert-bar { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+  .alert-chip { background:#fff; border:1px solid var(--border); border-radius:20px; padding:7px 16px; font-size:12px; display:inline-flex; align-items:center; gap:8px; cursor:pointer; transition:all 0.15s; font-weight:500; }
+  .alert-chip:hover { transform:translateY(-1px); box-shadow:0 3px 8px rgba(0,0,0,0.08); }
+  .alert-chip .ac-dot { width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }
+  .alert-chip .ac-cnt { font-weight:700; padding:1px 8px; border-radius:10px; font-size:11.5px; }
+  .ac-overdue .ac-dot { background:var(--danger); }
+  .ac-overdue .ac-cnt { background:#FEE2E2; color:#991B1B; }
+  .ac-review .ac-dot { background:var(--info); }
+  .ac-review .ac-cnt { background:#DBEAFE; color:#1E40AF; }
+  .ac-expiry .ac-dot { background:var(--warning); }
+  .ac-expiry .ac-cnt { background:#FEF3C7; color:#92400E; }
+  .alert-chip.ac-zero { opacity:0.45; }
+
+  /* ===== Settlement summary ===== */
+  .settlement-summary { display:none; grid-template-columns:repeat(4,1fr); gap:14px; padding:14px 20px; background:#fff; border:1px solid var(--blue-line); border-top:none; }
+  .settlement-summary.show { display:grid; }
+  .ss-box { background:var(--bg-soft); border:1px solid var(--border); border-radius:8px; padding:12px 14px; }
+  .ss-box .ss-label { font-size:11.5px; color:var(--text-light); margin-bottom:6px; font-weight:600; }
+  .ss-box .ss-val { font-size:18px; font-weight:700; }
+  .ss-box .ss-sub { font-size:11px; color:var(--text-light); margin-top:3px; }
+  .ss-val.s-danger { color:var(--danger); }
+  .ss-val.s-success { color:var(--success); }
+  .ss-val.s-info { color:var(--info); }
+
+  /* ===== Report monthly view ===== */
+  .report-header { display:none; background:#fff; border:1px solid var(--blue-line); border-top:none; padding:12px 20px; align-items:center; gap:12px; flex-wrap:wrap; }
+  .report-header.show { display:flex; }
+  .report-summary { display:none; grid-template-columns:repeat(3,1fr); gap:12px; padding:12px 20px; background:#fff; border:1px solid var(--blue-line); border-top:none; }
+  .report-summary.show { display:grid; }
+  .rs-box { background:var(--bg-soft); border:1px solid var(--border); border-radius:8px; padding:12px 14px; }
+  .rs-box .rs-label { font-size:11px; color:var(--text-light); margin-bottom:4px; font-weight:600; }
+  .rs-box .rs-val { font-size:15px; font-weight:700; }
+  .report-monthly-wrap { display:none; background:#fff; border:1px solid var(--blue-line); border-top:none; overflow:auto; max-height:calc(100vh - 320px); }
+  .report-monthly-wrap.show { display:block; }
+  .report-monthly-wrap table { min-width:500px; }
+  .month-row { cursor:pointer; }
+  .month-row:hover { background:var(--orange-light) !important; }
+  .month-detail-row td { padding:0 !important; border-bottom:1px solid var(--border); }
+  .month-inner { padding:10px 16px; border-left:3px solid var(--orange); background:#FAFAFA; }
+  .month-inner table { min-width:unset; width:100%; }
+  .month-inner thead th { background:#F3F4F6; font-size:11px; padding:7px 10px; }
+  .month-inner tbody td { white-space:normal; font-size:12px; }
+
+  /* Long/short badges */
+  .badge-long { background:#EFF6FF; color:#1E40AF; padding:2px 7px; border-radius:4px; font-size:10.5px; font-weight:600; display:inline-block; }
+  .badge-short { background:#FFF7ED; color:#C2410C; padding:2px 7px; border-radius:4px; font-size:10.5px; font-weight:600; display:inline-block; }
+  .badge-review { background:#FEF3C7; color:#92400E; padding:2px 7px; border-radius:4px; font-size:10.5px; font-weight:600; display:inline-block; margin-left:4px; }
 </style>
 </head>
 <body>
@@ -431,6 +493,49 @@
 </header>
 
 <main>
+  <!-- 대시보드 -->
+  <div class="dash-grid">
+    <div class="dash-card" onclick="switchTab('contract')">
+      <div class="dc-label">📋 계약/발주 현황</div>
+      <div class="dc-value" id="dc-contract">0<small>건</small></div>
+      <div class="dc-sub" id="dc-contract-sub">진행 중 계약</div>
+    </div>
+    <div class="dash-card" onclick="switchTab('settlement')">
+      <div class="dc-label">💰 정산 현황</div>
+      <div class="dc-value" id="dc-settlement">0<small>건</small></div>
+      <div class="dc-sub" id="dc-settlement-sub">정산 진행 중</div>
+    </div>
+    <div class="dash-card" style="border-left-color:var(--danger)" onclick="gotoOverdue()">
+      <div class="dc-label">⚠️ 지급 지연</div>
+      <div class="dc-value" id="dc-overdue" style="color:var(--danger)">0<small>건</small></div>
+      <div class="dc-sub">종료 후 30일 초과 미지급</div>
+    </div>
+    <div class="dash-card" onclick="switchTab('report')">
+      <div class="dc-label">📊 신고 완료</div>
+      <div class="dc-value" id="dc-report">0<small>건</small></div>
+      <div class="dc-sub" id="dc-report-sub">국세청 신고 완료</div>
+    </div>
+  </div>
+
+  <!-- 알림 바 -->
+  <div class="alert-bar">
+    <div class="alert-chip ac-overdue" id="chip-overdue" onclick="gotoOverdue()">
+      <span class="ac-dot"></span>
+      <span>지급 지연</span>
+      <span class="ac-cnt" id="ac-overdue-cnt">0</span>
+    </div>
+    <div class="alert-chip ac-review" id="chip-review" onclick="gotoReview()">
+      <span class="ac-dot"></span>
+      <span>재계약 검토 대상</span>
+      <span class="ac-cnt" id="ac-review-cnt">0</span>
+    </div>
+    <div class="alert-chip ac-expiry" id="chip-expiry">
+      <span class="ac-dot"></span>
+      <span>만료 임박 (30일 이내)</span>
+      <span class="ac-cnt" id="ac-expiry-cnt">0</span>
+    </div>
+  </div>
+
   <!-- 탭 -->
   <div class="tabs" id="tabs">
     <div class="tab active" data-tab="contract" onclick="switchTab('contract')">
@@ -460,10 +565,41 @@
     <select id="filterPM" onchange="renderList()">
       <option value="">PM 담당자(전체)</option>
     </select>
+    <select id="filterTerm" onchange="renderList()" style="display:none">
+      <option value="">기간구분(전체)</option>
+      <option value="long">장기(6개월+)</option>
+      <option value="short">단기</option>
+      <option value="review">재계약 검토</option>
+    </select>
     <div class="spacer"></div>
+    <button class="btn btn-sm" id="btnSettlementCsv" style="display:none" onclick="exportSettlementCSV()">📥 CSV 내보내기</button>
     <div class="view-toggle" id="viewToggle">
       <button class="active" data-view="table" onclick="setView('table')">📊 테이블</button>
       <button data-view="cards" onclick="setView('cards')">🗂 카드</button>
+    </div>
+  </div>
+
+  <!-- 정산 요약 (정산 탭에서만 표시) -->
+  <div class="settlement-summary" id="settlementSummary">
+    <div class="ss-box">
+      <div class="ss-label">정산 대상 총계</div>
+      <div class="ss-val" id="ss-total">0건</div>
+      <div class="ss-sub" id="ss-total-amt">-</div>
+    </div>
+    <div class="ss-box">
+      <div class="ss-label">✅ 지급 완료</div>
+      <div class="ss-val s-success" id="ss-paid">0건</div>
+      <div class="ss-sub" id="ss-paid-amt">-</div>
+    </div>
+    <div class="ss-box">
+      <div class="ss-label">🕐 지급 대기 (기한 내)</div>
+      <div class="ss-val s-info" id="ss-waiting">0건</div>
+      <div class="ss-sub" id="ss-waiting-amt">-</div>
+    </div>
+    <div class="ss-box">
+      <div class="ss-label">⚠️ 지급 지연</div>
+      <div class="ss-val s-danger" id="ss-overdue">0건</div>
+      <div class="ss-sub" id="ss-overdue-amt">-</div>
     </div>
   </div>
 
@@ -477,6 +613,39 @@
 
   <!-- Card View -->
   <div class="cards-wrap" id="cardsWrap"></div>
+
+  <!-- 신고 월별 뷰 (신고 탭에서만 표시) -->
+  <div class="report-header" id="reportHeader">
+    <span style="font-weight:600; font-size:13px; color:var(--navy);">연간 지급 내역 월별 집계</span>
+    <label style="font-size:13px; color:var(--text-light); font-weight:600; margin-left:8px;">연도</label>
+    <select id="reportYearSel" onchange="renderMonthlyReport()" style="padding:6px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px; font-family:inherit;"></select>
+    <div style="flex:1;"></div>
+    <button class="btn btn-sm" onclick="exportReportCSV()">📥 CSV 내보내기</button>
+  </div>
+  <div class="report-summary" id="reportSummary">
+    <div class="rs-box">
+      <div class="rs-label">연간 지급 건수 / 총액</div>
+      <div class="rs-val" id="rep-total">-</div>
+    </div>
+    <div class="rs-box">
+      <div class="rs-label">개인 (제세공과금 포함)</div>
+      <div class="rs-val" id="rep-personal">-</div>
+    </div>
+    <div class="rs-box">
+      <div class="rs-label">법인 (부가세 별도)</div>
+      <div class="rs-val" id="rep-corp">-</div>
+    </div>
+  </div>
+  <div class="report-monthly-wrap" id="reportMonthlyWrap">
+    <table>
+      <thead>
+        <tr>
+          <th>월</th><th>건수</th><th>총 지급액</th><th>개인</th><th>법인</th><th style="width:40px;"></th>
+        </tr>
+      </thead>
+      <tbody id="reportMonthlyTbody"></tbody>
+    </table>
+  </div>
 
   <!-- Empty -->
   <div class="empty" id="emptyState" style="display:none">
@@ -786,6 +955,39 @@ let currentView = 'table';
 let editingId = null;
 
 const STORAGE_KEY = 'outsourcing_contracts_v2';
+const LONG_TERM_DAYS = 180;
+const PAYMENT_DEADLINE_DAYS = 30;
+const REVIEW_WINDOW_DAYS = 30;
+const EXPIRY_ALERT_DAYS = 30;
+let expandedMonths = new Set();
+
+function isLongTerm(c) {
+  if (!c.startDate || !c.endDate) return null;
+  return Math.floor((new Date(c.endDate) - new Date(c.startDate)) / 86400000) >= LONG_TERM_DAYS;
+}
+function isReviewDue(c) {
+  if (isLongTerm(c) !== true) return false;
+  if (c.contractStatus === '완료' || c.contractStatus === '중도해지') return false;
+  const d = calcRemainDaysFrom(c.endDate);
+  return d !== null && d >= 0 && d <= REVIEW_WINDOW_DAYS;
+}
+function calcRemainDaysFrom(endDate) {
+  if (!endDate) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return Math.floor((new Date(endDate) - today) / 86400000);
+}
+function isPaymentOverdue(c) {
+  if (c.paidDate) return false;
+  if (!c.endDate) return false;
+  const deadline = new Date(c.endDate);
+  deadline.setDate(deadline.getDate() + PAYMENT_DEADLINE_DAYS);
+  const today = new Date(); today.setHours(0,0,0,0);
+  return today > deadline;
+}
+function parseAmt(c) {
+  return Number(String(c.amount || '').replace(/[^0-9]/g, '')) || 0;
+}
+function fmtWon(n) { return (n || 0).toLocaleString('ko-KR') + '원'; }
 
 // ========== 필드 정의 ==========
 const FIELDS = [
@@ -892,7 +1094,13 @@ function formatAmount(amount, division) {
 function renderAll() {
   updateCounts();
   populatePMFilter();
-  renderList();
+  renderDashboard();
+  renderSettlementSummary();
+  if (currentTab === 'report') {
+    renderMonthlyReport();
+  } else {
+    renderList();
+  }
 }
 function updateCounts() {
   const counts = { contract: 0, settlement: 0, report: 0 };
@@ -916,8 +1124,35 @@ function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => {
     t.classList.toggle('active', t.dataset.tab === tab);
   });
-  buildTableHead();
-  renderList();
+
+  const isReport = tab === 'report';
+  const isSettlement = tab === 'settlement';
+  const isContract = tab === 'contract';
+
+  const termSel = document.getElementById('filterTerm');
+  termSel.style.display = isContract ? '' : 'none';
+  if (!isContract) termSel.value = '';
+
+  document.getElementById('settlementSummary').classList.toggle('show', isSettlement);
+  document.getElementById('btnSettlementCsv').style.display = isSettlement ? 'inline-flex' : 'none';
+  document.getElementById('viewToggle').style.display = isReport ? 'none' : '';
+  document.getElementById('reportHeader').classList.toggle('show', isReport);
+  document.getElementById('reportSummary').classList.toggle('show', isReport);
+  document.getElementById('reportMonthlyWrap').classList.toggle('show', isReport);
+
+  if (isReport) {
+    document.getElementById('tableWrap').style.display = 'none';
+    document.getElementById('cardsWrap').classList.remove('show');
+    document.getElementById('emptyState').style.display = 'none';
+    renderMonthlyReport();
+    renderDashboard();
+    renderSettlementSummary();
+  } else {
+    buildTableHead();
+    renderList();
+    renderDashboard();
+    renderSettlementSummary();
+  }
 }
 function setView(view) {
   currentView = view;
@@ -933,6 +1168,7 @@ function getFilteredRows() {
   const div = document.getElementById('filterDivision').value;
   const studio = document.getElementById('filterStudio').value;
   const pm = document.getElementById('filterPM').value;
+  const term = document.getElementById('filterTerm')?.value || '';
 
   let rows = contracts.filter(c => !c.excluded);
   rows = rows.filter(c => getTab(c) === currentTab);
@@ -944,6 +1180,9 @@ function getFilteredRows() {
   if (div) rows = rows.filter(c => c.division === div);
   if (studio) rows = rows.filter(c => c.studio === studio);
   if (pm) rows = rows.filter(c => c.pmManager === pm);
+  if (term === 'long') rows = rows.filter(c => isLongTerm(c) === true);
+  else if (term === 'short') rows = rows.filter(c => isLongTerm(c) === false);
+  else if (term === 'review') rows = rows.filter(c => isReviewDue(c));
   return rows;
 }
 
@@ -953,7 +1192,7 @@ function buildTableHead() {
   if (currentTab === 'contract') {
     thead.innerHTML = `
       <tr class="group-row">
-        <th colspan="8">📌 기본 정보</th>
+        <th colspan="9">📌 기본 정보</th>
         <th colspan="6">🚀 요청 단계</th>
         <th colspan="6">✍️ 체결 단계</th>
       </tr>
@@ -966,6 +1205,7 @@ function buildTableHead() {
         <th>작업구분</th>
         <th>거래처등록</th>
         <th>계약현황</th>
+        <th>기간구분</th>
         <th class="group-start">요청일</th>
         <th>처리시작일</th>
         <th>소요일수</th>
@@ -1026,6 +1266,7 @@ function buildTableHead() {
 }
 
 function renderList() {
+  if (currentTab === 'report') return;
   const rows = getFilteredRows();
   const empty = rows.length === 0;
   document.getElementById('emptyState').style.display = empty ? 'block' : 'none';
@@ -1057,6 +1298,7 @@ function renderRow(c, idx) {
       <td>${c.workType || '-'}</td>
       <td>${badge(c.vendorReg)}</td>
       <td>${badge(c.contractStatus)}</td>
+      <td>${termBadgeHtml(c)}</td>
       <td class="group-start">${c.requestDate || '-'}</td>
       <td>${c.startProcessDate || '-'}</td>
       <td>${daysToProcess(c) || '-'}</td>
@@ -1129,6 +1371,9 @@ function renderCard(c) {
           ${c.division ? `<span class="c-tag">${c.division}</span>` : ''}
           ${c.contractType ? `<span class="c-tag">${c.contractType}</span>` : ''}
           ${c.workType ? `<span class="c-tag">${c.workType}</span>` : ''}
+          ${isLongTerm(c) === true ? `<span class="c-tag" style="background:#EFF6FF;color:#1E40AF;border-color:#BFDBFE;">장기</span>` : ''}
+          ${isLongTerm(c) === false ? `<span class="c-tag" style="background:#FFF7ED;color:#C2410C;border-color:#FED7AA;">단기</span>` : ''}
+          ${isReviewDue(c) ? `<span class="c-tag" style="background:#FEF3C7;color:#92400E;border-color:#FDE68A;">재계약검토</span>` : ''}
         </div>
       </div>
       <span class="c-tag" style="background:var(--orange);color:#fff;border-color:var(--orange)">${tabLabels[t]}</span>
@@ -1192,6 +1437,16 @@ function kv(k, v, full) {
 }
 
 // ========== 상태 뱃지 ==========
+function termBadgeHtml(c) {
+  const long = isLongTerm(c);
+  if (long === null) return '<span style="color:#D1D5DB">-</span>';
+  const termHtml = long
+    ? '<span class="badge-long">장기</span>'
+    : '<span class="badge-short">단기</span>';
+  const reviewHtml = isReviewDue(c) ? ' <span class="badge-review">재계약검토</span>' : '';
+  return termHtml + reviewHtml;
+}
+
 function badge(v) {
   if (!v) return '<span style="color:#D1D5DB">-</span>';
   const done = ['완료','가입완료','최종완료'];
@@ -1394,6 +1649,192 @@ function loadSampleData() {
   saveToLocal();
   renderAll();
   toast(`샘플 데이터 ${sample.length}건 추가`, 'success');
+}
+
+// ========== 대시보드 ==========
+function renderDashboard() {
+  const active = contracts.filter(c => !c.excluded);
+  const cnt = { contract:0, settlement:0, report:0 };
+  active.forEach(c => { const t = getTab(c); if (cnt[t] !== undefined) cnt[t]++; });
+
+  document.getElementById('dc-contract').innerHTML = cnt.contract + '<small>건</small>';
+  document.getElementById('dc-settlement').innerHTML = cnt.settlement + '<small>건</small>';
+  document.getElementById('dc-report').innerHTML = cnt.report + '<small>건</small>';
+
+  const overdue = active.filter(c => getTab(c) === 'settlement' && isPaymentOverdue(c)).length;
+  document.getElementById('dc-overdue').innerHTML = overdue + '<small>건</small>';
+
+  const review = active.filter(c => isReviewDue(c)).length;
+  const expiry = active.filter(c => {
+    const d = calcRemainDaysFrom(c.endDate);
+    return d !== null && d >= 0 && d <= EXPIRY_ALERT_DAYS
+      && c.contractStatus !== '완료' && c.contractStatus !== '중도해지';
+  }).length;
+
+  document.getElementById('ac-overdue-cnt').textContent = overdue;
+  document.getElementById('ac-review-cnt').textContent = review;
+  document.getElementById('ac-expiry-cnt').textContent = expiry;
+  document.getElementById('chip-overdue').classList.toggle('ac-zero', overdue === 0);
+  document.getElementById('chip-review').classList.toggle('ac-zero', review === 0);
+  document.getElementById('chip-expiry').classList.toggle('ac-zero', expiry === 0);
+}
+
+// ========== 정산 요약 ==========
+function renderSettlementSummary() {
+  const rows = contracts.filter(c => !c.excluded && getTab(c) === 'settlement');
+  const total = rows.length;
+  const totalAmt = rows.reduce((s,c) => s + parseAmt(c), 0);
+  const paidRows = rows.filter(c => c.paidDate);
+  const paid = paidRows.length;
+  const paidAmt = paidRows.reduce((s,c) => s + parseAmt(c), 0);
+  const overdueRows = rows.filter(c => isPaymentOverdue(c));
+  const overdue = overdueRows.length;
+  const overdueAmt = overdueRows.reduce((s,c) => s + parseAmt(c), 0);
+  const waiting = Math.max(0, total - paid - overdue);
+  const waitingAmt = Math.max(0, totalAmt - paidAmt - overdueAmt);
+
+  document.getElementById('ss-total').textContent = total + '건';
+  document.getElementById('ss-total-amt').textContent = fmtWon(totalAmt);
+  document.getElementById('ss-paid').textContent = paid + '건';
+  document.getElementById('ss-paid-amt').textContent = fmtWon(paidAmt);
+  document.getElementById('ss-waiting').textContent = waiting + '건';
+  document.getElementById('ss-waiting-amt').textContent = fmtWon(waitingAmt);
+  document.getElementById('ss-overdue').textContent = overdue + '건';
+  document.getElementById('ss-overdue-amt').textContent = fmtWon(overdueAmt);
+}
+
+// ========== 신고 월별 집계 ==========
+function renderMonthlyReport() {
+  const allPaid = contracts.filter(c => !c.excluded && c.paidDate);
+  const years = [...new Set(allPaid.map(c => c.paidDate.slice(0,4)))].sort().reverse();
+  if (!years.length) years.push(new Date().getFullYear().toString());
+
+  const sel = document.getElementById('reportYearSel');
+  const prev = sel.value;
+  sel.innerHTML = years.map(y => `<option value="${y}" ${y === (prev || years[0]) ? 'selected' : ''}>${y}년</option>`).join('');
+  const curYear = sel.value;
+
+  const yr = allPaid.filter(c => c.paidDate.startsWith(curYear));
+  const totalAmt = yr.reduce((s,c) => s + parseAmt(c), 0);
+  const perRows = yr.filter(c => c.division === '개인');
+  const corRows = yr.filter(c => c.division === '법인');
+  const perAmt = perRows.reduce((s,c) => s + parseAmt(c), 0);
+  const corAmt = corRows.reduce((s,c) => s + parseAmt(c), 0);
+
+  document.getElementById('rep-total').innerHTML = `${yr.length}건 / <b style="color:var(--orange)">${fmtWon(totalAmt)}</b>`;
+  document.getElementById('rep-personal').textContent = `${perRows.length}건 / ${fmtWon(perAmt)}`;
+  document.getElementById('rep-corp').textContent = `${corRows.length}건 / ${fmtWon(corAmt)}`;
+
+  const months = {};
+  for (let m = 1; m <= 12; m++) {
+    const k = `${curYear}-${String(m).padStart(2,'0')}`;
+    months[k] = { m, count:0, total:0, personal:0, corp:0, items:[] };
+  }
+  yr.forEach(c => {
+    const mk = c.paidDate.slice(0,7);
+    if (!months[mk]) return;
+    const amt = parseAmt(c);
+    months[mk].count++;
+    months[mk].total += amt;
+    if (c.division === '개인') months[mk].personal += amt;
+    else months[mk].corp += amt;
+    months[mk].items.push(c);
+  });
+
+  const tbody = document.getElementById('reportMonthlyTbody');
+  const htmlRows = [];
+  for (let m = 1; m <= 12; m++) {
+    const k = `${curYear}-${String(m).padStart(2,'0')}`;
+    const d = months[k];
+    if (!d.count) continue;
+    const isOpen = expandedMonths.has(k);
+    htmlRows.push(`
+      <tr class="month-row" onclick="toggleMonth('${k}')">
+        <td style="font-weight:700;color:var(--orange);font-size:13.5px;">${curYear}년 ${m}월</td>
+        <td><b>${d.count}건</b></td>
+        <td style="font-weight:700;">${fmtWon(d.total)}</td>
+        <td>${fmtWon(d.personal)}</td>
+        <td>${fmtWon(d.corp)}</td>
+        <td style="text-align:center;color:var(--orange);font-weight:700;">${isOpen ? '▾' : '▸'}</td>
+      </tr>`);
+    if (isOpen) {
+      const inner = d.items.map(c => `
+        <tr>
+          <td>${c.paidDate}</td>
+          <td>${c.division||'-'}</td>
+          <td style="font-weight:600;">${c.vendor||'-'}</td>
+          <td>${c.workName||'-'}</td>
+          <td>${c.pmManager||'-'}</td>
+          <td style="text-align:right;">${formatAmount(c.amount,c.division)||'-'}</td>
+          <td>${badge(c.nationalTax)}</td>
+          <td style="text-align:center;"><button class="btn btn-sm" onclick="event.stopPropagation();openEditModal('${c.id}')">수정</button></td>
+        </tr>`).join('');
+      htmlRows.push(`
+        <tr class="month-detail-row">
+          <td colspan="6">
+            <div class="month-inner">
+              <table>
+                <thead><tr><th>지급일</th><th>구분</th><th>거래처명</th><th>작업명</th><th>PM</th><th>금액</th><th>국세청신고</th><th></th></tr></thead>
+                <tbody>${inner}</tbody>
+              </table>
+            </div>
+          </td>
+        </tr>`);
+    }
+  }
+  tbody.innerHTML = htmlRows.length ? htmlRows.join('') :
+    `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-light);">해당 연도의 지급 완료 건이 없습니다.</td></tr>`;
+}
+
+function toggleMonth(key) {
+  if (expandedMonths.has(key)) expandedMonths.delete(key);
+  else expandedMonths.add(key);
+  renderMonthlyReport();
+}
+
+// ========== CSV 내보내기 ==========
+function exportSettlementCSV() {
+  const rows = contracts.filter(c => !c.excluded && getTab(c) === 'settlement');
+  if (!rows.length) { toast('내보낼 데이터가 없습니다', 'error'); return; }
+  const headers = ['지급상태','구분','거래처명','작업명','PM담당자','만료일','지급기한','금액','지급완료일','세인정산서'];
+  const data = rows.map(c => {
+    const st = c.paidDate ? '지급완료' : isPaymentOverdue(c) ? '지급지연' : '지급대기';
+    let deadline = '';
+    if (c.endDate) { const d = new Date(c.endDate); d.setDate(d.getDate() + 30); deadline = d.toISOString().slice(0,10); }
+    return [st, c.division||'', c.vendor||'', c.workName||'', c.pmManager||'', c.endDate||'', deadline, c.amount||0, c.paidDate||'', c.taxInvoice||''];
+  });
+  downloadCSV([headers, ...data], `정산현황_${new Date().toISOString().slice(0,10)}`);
+}
+
+function exportReportCSV() {
+  const sel = document.getElementById('reportYearSel');
+  const year = sel ? sel.value : new Date().getFullYear().toString();
+  const rows = contracts.filter(c => !c.excluded && c.paidDate && c.paidDate.startsWith(year))
+    .sort((a,b) => a.paidDate.localeCompare(b.paidDate));
+  if (!rows.length) { toast('내보낼 데이터가 없습니다', 'error'); return; }
+  const headers = ['신고월','지급완료일','구분','거래처명','작업명','PM담당자','금액','국세청신고'];
+  const data = rows.map(c => [c.paidDate.slice(0,7), c.paidDate, c.division||'', c.vendor||'', c.workName||'', c.pmManager||'', c.amount||0, c.nationalTax||'']);
+  downloadCSV([headers, ...data], `신고내역_${year}`);
+}
+
+function downloadCSV(rows, filename) {
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('CSV를 내보냈습니다', 'success');
+}
+
+// ========== 알림 액션 ==========
+function gotoOverdue() { switchTab('settlement'); }
+function gotoReview() {
+  switchTab('contract');
+  document.getElementById('filterTerm').style.display = '';
+  document.getElementById('filterTerm').value = 'review';
+  renderList();
 }
 
 // ========== Toast ==========

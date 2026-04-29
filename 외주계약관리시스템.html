@@ -471,6 +471,25 @@
   .badge-long { background:#EFF6FF; color:#1E40AF; padding:2px 7px; border-radius:4px; font-size:10.5px; font-weight:600; display:inline-block; }
   .badge-short { background:#FFF7ED; color:#C2410C; padding:2px 7px; border-radius:4px; font-size:10.5px; font-weight:600; display:inline-block; }
   .badge-review { background:#FEF3C7; color:#92400E; padding:2px 7px; border-radius:4px; font-size:10.5px; font-weight:600; display:inline-block; margin-left:4px; }
+
+  /* ===== Sub-tabs (계약 탭 전용) ===== */
+  .sub-tabs-wrap { display:none; background:#fff; border:1px solid var(--blue-line); border-top:none; padding:0 20px; }
+  .sub-tabs-wrap.show { display:block; }
+  .sub-tabs-inner { display:flex; gap:4px; padding:10px 0 0; border-bottom:1px solid var(--border); }
+  .sub-tab-btn {
+    padding:7px 18px; border:1px solid transparent; border-bottom:none;
+    border-radius:6px 6px 0 0; margin-bottom:-1px;
+    cursor:pointer; font-size:12.5px; font-weight:600;
+    color:var(--text-light); background:transparent; transition:all 0.15s; font-family:inherit;
+  }
+  .sub-tab-btn:hover { color:var(--orange); background:var(--orange-light); }
+  .sub-tab-btn.active { color:var(--orange); background:#fff; border-color:var(--border); border-bottom-color:#fff; }
+  .sub-tab-btn .sct-badge {
+    display:inline-block; background:var(--blue-pastel); color:var(--navy);
+    padding:1px 7px; border-radius:10px; font-size:11px; font-weight:700; margin-left:5px;
+  }
+  .sub-tab-btn.active .sct-badge { background:var(--orange); color:#fff; }
+  .sub-tab-btn[data-subtab="review"] .sct-badge.alert { background:var(--danger); color:#fff; }
 </style>
 </head>
 <body>
@@ -549,6 +568,16 @@
     </div>
   </div>
 
+  <!-- 서브탭 (계약/발주 탭에서만 표시) -->
+  <div class="sub-tabs-wrap show" id="contractSubTabs">
+    <div class="sub-tabs-inner">
+      <button class="sub-tab-btn active" data-subtab="all" onclick="switchSubTab('all')">전체 <span class="sct-badge" id="sct-all">0</span></button>
+      <button class="sub-tab-btn" data-subtab="long" onclick="switchSubTab('long')">장기 <span class="sct-badge" id="sct-long">0</span></button>
+      <button class="sub-tab-btn" data-subtab="short" onclick="switchSubTab('short')">단기 <span class="sct-badge" id="sct-short">0</span></button>
+      <button class="sub-tab-btn" data-subtab="review" onclick="switchSubTab('review')">🔄 재계약 검토 <span class="sct-badge" id="sct-review">0</span></button>
+    </div>
+  </div>
+
   <!-- Toolbar -->
   <div class="toolbar">
     <input type="text" id="searchInput" placeholder="🔍 거래처명, 작가명, 작업명 검색..." oninput="renderList()" />
@@ -564,12 +593,6 @@
     </select>
     <select id="filterPM" onchange="renderList()">
       <option value="">PM 담당자(전체)</option>
-    </select>
-    <select id="filterTerm" onchange="renderList()" style="display:none">
-      <option value="">기간구분(전체)</option>
-      <option value="long">장기(6개월+)</option>
-      <option value="short">단기</option>
-      <option value="review">재계약 검토</option>
     </select>
     <div class="spacer"></div>
     <button class="btn btn-sm" id="btnSettlementCsv" style="display:none" onclick="exportSettlementCSV()">📥 CSV 내보내기</button>
@@ -951,6 +974,7 @@
 // ========== 상태 관리 ==========
 let contracts = [];
 let currentTab = 'contract'; // 'contract' | 'settlement' | 'report'
+let currentSubTab = 'all';   // 'all' | 'long' | 'short' | 'review'
 let currentView = 'table';
 let editingId = null;
 
@@ -1093,6 +1117,7 @@ function formatAmount(amount, division) {
 // ========== 렌더링 ==========
 function renderAll() {
   updateCounts();
+  updateSubTabCounts();
   populatePMFilter();
   renderDashboard();
   renderSettlementSummary();
@@ -1129,9 +1154,11 @@ function switchTab(tab) {
   const isSettlement = tab === 'settlement';
   const isContract = tab === 'contract';
 
-  const termSel = document.getElementById('filterTerm');
-  termSel.style.display = isContract ? '' : 'none';
-  if (!isContract) termSel.value = '';
+  document.getElementById('contractSubTabs').classList.toggle('show', isContract);
+  if (!isContract) {
+    currentSubTab = 'all';
+    document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.subtab === 'all'));
+  }
 
   document.getElementById('settlementSummary').classList.toggle('show', isSettlement);
   document.getElementById('btnSettlementCsv').style.display = isSettlement ? 'inline-flex' : 'none';
@@ -1168,8 +1195,6 @@ function getFilteredRows() {
   const div = document.getElementById('filterDivision').value;
   const studio = document.getElementById('filterStudio').value;
   const pm = document.getElementById('filterPM').value;
-  const term = document.getElementById('filterTerm')?.value || '';
-
   let rows = contracts.filter(c => !c.excluded);
   rows = rows.filter(c => getTab(c) === currentTab);
   if (search) rows = rows.filter(c =>
@@ -1180,9 +1205,11 @@ function getFilteredRows() {
   if (div) rows = rows.filter(c => c.division === div);
   if (studio) rows = rows.filter(c => c.studio === studio);
   if (pm) rows = rows.filter(c => c.pmManager === pm);
-  if (term === 'long') rows = rows.filter(c => isLongTerm(c) === true);
-  else if (term === 'short') rows = rows.filter(c => isLongTerm(c) === false);
-  else if (term === 'review') rows = rows.filter(c => isReviewDue(c));
+  if (currentTab === 'contract') {
+    if (currentSubTab === 'long') rows = rows.filter(c => isLongTerm(c) === true);
+    else if (currentSubTab === 'short') rows = rows.filter(c => isLongTerm(c) === false);
+    else if (currentSubTab === 'review') rows = rows.filter(c => isReviewDue(c));
+  }
   return rows;
 }
 
@@ -1832,9 +1859,28 @@ function downloadCSV(rows, filename) {
 function gotoOverdue() { switchTab('settlement'); }
 function gotoReview() {
   switchTab('contract');
-  document.getElementById('filterTerm').style.display = '';
-  document.getElementById('filterTerm').value = 'review';
+  switchSubTab('review');
+}
+
+function switchSubTab(sub) {
+  currentSubTab = sub;
+  document.querySelectorAll('.sub-tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.subtab === sub);
+  });
   renderList();
+}
+
+function updateSubTabCounts() {
+  const base = contracts.filter(c => !c.excluded && getTab(c) === 'contract');
+  const longCnt = base.filter(c => isLongTerm(c) === true).length;
+  const shortCnt = base.filter(c => isLongTerm(c) === false).length;
+  const reviewCnt = base.filter(c => isReviewDue(c)).length;
+  document.getElementById('sct-all').textContent = base.length;
+  document.getElementById('sct-long').textContent = longCnt;
+  document.getElementById('sct-short').textContent = shortCnt;
+  const reviewBadge = document.getElementById('sct-review');
+  reviewBadge.textContent = reviewCnt;
+  reviewBadge.classList.toggle('alert', reviewCnt > 0);
 }
 
 // ========== Toast ==========

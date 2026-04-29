@@ -467,6 +467,33 @@
   .month-inner thead th { background:#F3F4F6; font-size:11px; padding:7px 10px; }
   .month-inner tbody td { white-space:normal; font-size:12px; }
 
+  /* ===== 설정 드롭다운 ===== */
+  .settings-wrap { position: relative; }
+  .settings-btn {
+    width: 34px; height: 34px; border-radius: 7px;
+    border: 1px solid var(--border); background: #fff;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 15px; color: var(--text-light); transition: all 0.15s; flex-shrink: 0;
+  }
+  .settings-btn:hover { background: var(--bg-soft); color: var(--text); border-color: #D1D5DB; }
+  .settings-dropdown {
+    display: none; position: absolute; top: calc(100% + 8px); right: 0;
+    background: #fff; border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12); min-width: 160px; padding: 6px; z-index: 150;
+    animation: ddIn 0.12s ease;
+  }
+  @keyframes ddIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+  .settings-dropdown.open { display: block; }
+  .dd-item {
+    display: flex; align-items: center; gap: 8px; width: 100%;
+    padding: 8px 12px; border: none; background: transparent; border-radius: 6px;
+    cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text);
+    text-align: left; font-family: inherit; transition: background 0.1s;
+  }
+  .dd-item:hover { background: var(--bg-soft); }
+  .dd-divider { height: 1px; background: var(--border); margin: 4px 2px; }
+  .hd-sep { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; margin: 0 2px; }
+
   /* Long/short badges */
   .badge-long { background:#EFF6FF; color:#1E40AF; padding:2px 7px; border-radius:4px; font-size:10.5px; font-weight:600; display:inline-block; }
   .badge-short { background:#FFF7ED; color:#C2410C; padding:2px 7px; border-radius:4px; font-size:10.5px; font-weight:600; display:inline-block; }
@@ -502,14 +529,22 @@
       <div class="sub">Outsourcing Contract & Settlement Manager</div>
     </div>
   </div>
-  <div class="header-right">
+  <div class="header-right" style="gap:8px;">
     <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="handleCsvImport(event)" />
     <input type="file" id="jsonFileInput" accept=".json" style="display:none" onchange="handleJsonImport(event)" />
-    <button class="btn" onclick="exportAllCSV()" title="전체 데이터를 Excel에서 열 수 있는 CSV로 내보내기">📊 엑셀 내보내기</button>
-    <button class="btn" onclick="document.getElementById('csvFileInput').click()" title="Excel에서 저장한 CSV 파일을 가져오기">📋 엑셀 가져오기</button>
-    <button class="btn" onclick="exportJson()">📤 JSON 백업</button>
-    <button class="btn" onclick="document.getElementById('jsonFileInput').click()">📥 JSON 복원</button>
-    <button class="btn btn-sm" onclick="loadSampleData()">🎲 샘플</button>
+    <button class="btn" onclick="exportAllCSV()">📊 엑셀 내보내기</button>
+    <button class="btn" onclick="document.getElementById('csvFileInput').click()">📋 엑셀 가져오기</button>
+    <span class="hd-sep"></span>
+    <div class="settings-wrap">
+      <button class="settings-btn" onclick="toggleSettings(event)" title="추가 설정">⚙️</button>
+      <div class="settings-dropdown" id="settingsDropdown">
+        <button class="dd-item" onclick="exportJson(); closeSettings()">📤 JSON 백업</button>
+        <button class="dd-item" onclick="document.getElementById('jsonFileInput').click(); closeSettings()">📥 JSON 복원</button>
+        <div class="dd-divider"></div>
+        <button class="dd-item" onclick="loadSampleData(); closeSettings()">🎲 샘플 데이터 불러오기</button>
+      </div>
+    </div>
+    <span class="hd-sep"></span>
     <button class="btn btn-primary" onclick="openAddModal()">+ 새 계약 등록</button>
   </div>
 </header>
@@ -1069,7 +1104,18 @@ document.addEventListener('DOMContentLoaded', () => {
   loadFromLocal();
   buildTableHead();
   renderAll();
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.settings-wrap')) closeSettings();
+  });
 });
+
+function toggleSettings(e) {
+  e.stopPropagation();
+  document.getElementById('settingsDropdown').classList.toggle('open');
+}
+function closeSettings() {
+  document.getElementById('settingsDropdown').classList.remove('open');
+}
 
 // ========== 로컬 저장소 ==========
 function loadFromLocal() {

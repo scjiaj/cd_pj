@@ -1136,10 +1136,7 @@ function saveToLocal() {
 // 계약/발주 현황: 그 외
 function getTab(c) {
   if (c.nationalTax === '완료') return 'report';
-  const settlementStarted = c.workQc === '최종완료'
-    || hasVal(c.expenseApproval) || hasVal(c.taxInvoice)
-    || hasVal(c.paidDate) || hasVal(c.amount);
-  if (settlementStarted) return 'settlement';
+  if (c.workQc === '최종완료' || hasVal(c.paidDate)) return 'settlement';
   return 'contract';
 }
 function hasVal(v) { return v !== null && v !== undefined && String(v).trim() !== ''; }

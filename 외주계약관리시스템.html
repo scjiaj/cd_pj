@@ -711,7 +711,7 @@
   <!-- 정산 예정 현황 (신고 탭에서만 표시) -->
   <div class="report-header" id="planReportHeader">
     <span style="font-weight:600; font-size:13px; color:var(--navy);">📅 정산 예정 현황 (미지급)</span>
-    <small style="margin-left:8px; color:var(--text-light); font-size:12px;">정산예정년월이 설정된 미지급 건의 월별 예상 금액</small>
+    <small style="margin-left:8px; color:var(--text-light); font-size:12px;">정산예정일(검수완료일/세금계산서발행일)이 설정된 미지급 건의 월별 예상 금액</small>
   </div>
   <div class="report-monthly-wrap" id="planReportWrap">
     <table>
@@ -961,8 +961,8 @@
             </select>
           </div>
           <div class="form-group">
-            <label>정산 예정 년월</label>
-            <input type="month" id="f_settlementPlanYM" />
+            <label>정산예정일 <small style="color:var(--text-light);font-weight:400">(검수완료일 또는 세금계산서발행일)</small></label>
+            <input type="date" id="f_settlementPlanYM" />
           </div>
           <div class="form-group">
             <label>지급완료일</label>
@@ -1098,7 +1098,7 @@ const FIELD_MAP = [
   ['workQc',            '작업검수'],
   ['expenseApproval',   '지출품의서'],
   ['taxInvoice',        '세인정산서'],
-  ['settlementPlanYM',  '정산예정년월'],
+  ['settlementPlanYM',  '정산예정일'],
   ['paidDate',          '지급완료일'],
   ['amount',            '금액'],
   ['paymentStatement',  '지급명세서전달'],
@@ -1372,7 +1372,7 @@ function buildTableHead() {
         <th class="group-start">작업/검수</th>
         <th>지출품의서</th>
         <th>세인정산서</th>
-        <th>정산예정년월</th>
+        <th>정산예정일</th>
         <th>지급완료일</th>
         <th>금액(원)</th>
       </tr>`;
@@ -1936,12 +1936,12 @@ function renderPlanReport() {
   if (!tbody) return;
   const rows = contracts.filter(c => !c.excluded && getTab(c) === 'settlement' && !c.paidDate && c.settlementPlanYM);
   if (!rows.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-light);">정산 예정 년월이 설정된 미지급 건이 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-light);">정산예정일이 설정된 미지급 건이 없습니다.</td></tr>`;
     return;
   }
   const months = {};
   rows.forEach(c => {
-    const k = c.settlementPlanYM;
+    const k = c.settlementPlanYM.slice(0, 7); // YYYY-MM으로 그룹핑
     if (!months[k]) months[k] = { count:0, total:0, personal:0, corp:0, items:[] };
     const amt = parseAmt(c);
     months[k].count++;
@@ -1981,7 +1981,7 @@ function renderPlanReport() {
           <td colspan="6">
             <div class="month-inner">
               <table>
-                <thead><tr><th>예정년월</th><th>구분</th><th>거래처명</th><th>작업명</th><th>PM</th><th>예상금액</th><th>작업검수</th><th></th></tr></thead>
+                <thead><tr><th>정산예정일</th><th>구분</th><th>거래처명</th><th>작업명</th><th>PM</th><th>예상금액</th><th>작업검수</th><th></th></tr></thead>
                 <tbody>${inner}</tbody>
               </table>
             </div>
